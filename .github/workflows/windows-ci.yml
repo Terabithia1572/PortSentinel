@@ -23,7 +23,7 @@ concurrency:
 env:
   DOTNET_NOLOGO: 'true'
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
-  NUGET_PACKAGES: ${{ runner.temp }}/portsentinel-nuget
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
 jobs:
   build-test:
