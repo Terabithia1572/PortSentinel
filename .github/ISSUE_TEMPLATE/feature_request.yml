@@ -1,0 +1,17 @@
+name: Özellik önerisi
+description: Kullanım ihtiyacını ve önerilen davranışı açıklayın.
+title: "[Öneri] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Hangi ihtiyacı karşılıyor?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Beklenen davranış
+      description: Somut kullanım örneği, kapsam ve varsa alternatifleri belirtin.
+    validations:
+      required: true

@@ -1,0 +1,61 @@
+<Window x:Class="PortSentinel.Desktop.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="PortSentinel" Width="1280" Height="850" MinWidth="1000" MinHeight="680" WindowStartupLocation="CenterScreen"
+ Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}" FontFamily="Segoe UI" FontSize="14">
+ <Border Background="{StaticResource BackgroundBrush}" Padding="26"><Grid>
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <DockPanel Margin="0,0,0,20">
+   <StackPanel DockPanel.Dock="Left"><TextBlock Text="PortSentinel" FontSize="30" FontWeight="SemiBold"/><TextBlock Text="USB depolama · cihaz izin yönetimi" Foreground="#A9BCD3" Margin="0,4,0,0"/></StackPanel>
+   <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding Activity}" VerticalAlignment="Center" Margin="0,0,15,0"/><Button Content="Yenile" Command="{Binding RefreshCommand}"/><Button Content="Yönetici olarak aç" Click="ElevateClick" Background="#354354"/></StackPanel>
+  </DockPanel>
+  <Border Grid.Row="1" Background="#3B3022" BorderBrush="#877041" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+   <StackPanel><TextBlock Text="ERİŞİM ENGELİ DOĞRULANMADI" Foreground="#F6D591" FontWeight="SemiBold"/><TextBlock Text="{Binding ProtectionStatus}" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel>
+  </Border>
+  <TabControl x:Name="Screens" Grid.Row="2">
+   <TabItem Header="Kontrol paneli">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,20,0,0">
+     <TextBlock Text="Makine durumu" FontSize="22" FontWeight="SemiBold"/>
+     <Grid Margin="0,18,0,20"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <Border Background="{StaticResource SurfaceBrush}" Padding="20" CornerRadius="5" Margin="0,0,12,0"><StackPanel><TextBlock Text="WINDOWS SERVİSİ" Foreground="#A9BCD3"/><TextBlock Text="{Binding ServiceStatus}" FontSize="19" Margin="0,12,0,9"/><TextBlock Text="{Binding Role}" TextWrapping="Wrap"/></StackPanel></Border>
+      <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" Padding="20" CornerRadius="5"><StackPanel><TextBlock Text="POLİTİKA REVİZYONU" Foreground="#A9BCD3"/><TextBlock Text="{Binding RevisionSummary}" TextWrapping="Wrap" FontSize="17" Margin="0,12,0,9"/><TextBlock Text="{Binding InventorySummary}" TextWrapping="Wrap"/></StackPanel></Border>
+     </Grid>
+     <TextBlock Text="İstenen izinler, Windows üzerinde doğrulanmış erişimden ayrıdır." FontSize="18" FontWeight="SemiBold"/>
+     <TextBlock Text="Bu sürüm cihazları keşfeder, izin kayıtlarını ve yönetici işlemlerini saklar. Lisanslı Defender Device Control dağıtımı ve donanım kabul testleri tamamlanmadığı için cihaz dosyalarının erişilebilir olduğunu varsayın." TextWrapping="Wrap" Foreground="#BECCDC" Margin="0,10,0,20"/>
+     <Button Content="Bağlı cihazları yeniden tara" Command="{Binding ReconcileCommand}" HorizontalAlignment="Left"/>
+     <GroupBox Header="Son politika işlemleri"><DataGrid ItemsSource="{Binding Revisions}" Height="235"><DataGrid.Columns><DataGridTextColumn Header="Revizyon" Binding="{Binding Id}" Width="85"/><DataGridTextColumn Header="Durum" Binding="{Binding State}" Width="130"/><DataGridTextColumn Header="Açıklama" Binding="{Binding Details}" Width="*"/></DataGrid.Columns></DataGrid></GroupBox>
+    </StackPanel></ScrollViewer>
+   </TabItem>
+   <TabItem Header="Bağlı cihazlar">
+    <Grid Margin="0,20,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <TextBlock Text="{Binding InventorySummary}" Margin="0,0,0,12"/>
+     <DataGrid Grid.Row="1" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}"><DataGrid.Columns><DataGridTextColumn Header="Cihaz" Binding="{Binding Name}" Width="*"/><DataGridTextColumn Header="Üretici" Binding="{Binding Manufacturer}" Width="130"/><DataGridTextColumn Header="Kapasite" Binding="{Binding Capacity}" Width="95"/><DataGridTextColumn Header="İstenen karar" Binding="{Binding Desired}" Width="160"/><DataGridTextColumn Header="Etkin erişim" Binding="{Binding Effective}" Width="130"/></DataGrid.Columns></DataGrid>
+     <GroupBox Grid.Row="2" Header="Fiziksel kimlik ve ilişkiler"><ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto"><TextBlock Text="{Binding DeviceDetails}" TextWrapping="Wrap"/></ScrollViewer></GroupBox>
+     <StackPanel Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Center"><TextBox Text="{Binding DeviceName, UpdateSourceTrigger=PropertyChanged}" Width="300" MaxLength="80"/><Button Content="İzin kaydı ekle" Command="{Binding GrantCommand}"/><TextBlock Text="Windows erişim engelini etkinleştirmez." VerticalAlignment="Center" Foreground="#BECCDC"/></StackPanel>
+    </Grid>
+   </TabItem>
+   <TabItem Header="İzin verilenler">
+    <Grid Margin="0,20,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <TextBlock Text="Bilgisayar genelindeki istenen izin kayıtları · fiziksel engelleme doğrulanmadı" Margin="0,0,0,15"/>
+     <DataGrid Grid.Row="1" ItemsSource="{Binding Registered}" SelectedItem="{Binding SelectedRegistered}"><DataGrid.Columns><DataGridTextColumn Header="Ad" Binding="{Binding Name}" Width="*"/><DataGridTextColumn Header="Seri" Binding="{Binding Serial}" Width="220"/><DataGridTextColumn Header="VID/PID" Binding="{Binding VidPid}" Width="110"/><DataGridTextColumn Header="İzin kaydı" Binding="{Binding Allowed}" Width="180"/><DataGridTextColumn Header="Bağlantı" Binding="{Binding Connected}" Width="180"/></DataGrid.Columns></DataGrid>
+     <StackPanel Grid.Row="2" Margin="0,15,0,0"><TextBlock Text="İzin iptali açık dosya tanıtıcılarını kapatmaz. Yazmaları tamamlayın; üretim motorunda yeniden takma/başlatma gerekebilir." TextWrapping="Wrap" Foreground="#F6D591"/><StackPanel Orientation="Horizontal" Margin="0,10,0,0"><TextBox Text="{Binding DeviceName, UpdateSourceTrigger=PropertyChanged}" Width="300" MaxLength="80"/><Button Content="Adı kaydet" Command="{Binding RenameCommand}"/><Button Content="İzni kaldır" Command="{Binding RevokeCommand}" Background="#844B43"/></StackPanel></StackPanel>
+    </Grid>
+   </TabItem>
+   <TabItem Header="Olaylar ve işlemler">
+    <Grid Margin="0,20,0,0"><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+     <GroupBox Header="Bağlantı olayları · son 100"><DataGrid ItemsSource="{Binding Events}"><DataGrid.Columns><DataGridTextColumn Header="Yerel saat" Binding="{Binding Time}" Width="165"/><DataGridTextColumn Header="Olay" Binding="{Binding Kind}" Width="230"/><DataGridTextColumn Header="Cihaz" Binding="{Binding Device}" Width="*"/></DataGrid.Columns></DataGrid></GroupBox>
+     <GroupBox Grid.Row="1" Header="Yönetici ve reddedilen işlemler · son 100"><DataGrid ItemsSource="{Binding Audit}"><DataGrid.Columns><DataGridTextColumn Header="Yerel saat" Binding="{Binding Time}" Width="165"/><DataGridTextColumn Header="İşlem" Binding="{Binding Operation}" Width="100"/><DataGridTextColumn Header="Sonuç" Binding="{Binding Outcome}" Width="130"/><DataGridTextColumn Header="Açıklama" Binding="{Binding Details}" Width="*"/><DataGridTextColumn Header="Correlation ID" Binding="{Binding Correlation}" Width="150"/></DataGrid.Columns></DataGrid></GroupBox>
+    </Grid>
+   </TabItem>
+   <TabItem Header="Ayarlar ve tanılama">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,20,0,0">
+     <TextBlock Text="Tarama ve kayıt saklama" FontSize="21"/>
+     <StackPanel Orientation="Horizontal" Margin="0,12,0,0"><StackPanel><TextBlock Text="Tarama aralığı (3–60 sn)"/><TextBox Text="{Binding ScanSeconds}" Width="170" HorizontalAlignment="Left"/></StackPanel><StackPanel><TextBlock Text="Olay saklama (1–90 gün)"/><TextBox Text="{Binding RetentionDays}" Width="170" HorizontalAlignment="Left"/></StackPanel><Button Content="Ayarları kaydet" Command="{Binding SettingsCommand}" VerticalAlignment="Center"/></StackPanel>
+     <TextBlock Text="Dosya logları: en çok 30 × 5 MiB ve 30 gün. SQLite olayları: saklama süresi ve 10.000 satır sınırı." Foreground="#BECCDC" TextWrapping="Wrap"/>
+     <GroupBox Header="Windows ve yönetim ortamı"><TextBlock Text="{Binding Diagnostics}" TextWrapping="Wrap"/></GroupBox>
+     <Button Content="Defender XML önizlemesini oluştur" Command="{Binding PreviewCommand}" HorizontalAlignment="Left"/>
+     <TextBox Text="{Binding Preview, Mode=OneWay}" IsReadOnly="True" TextWrapping="NoWrap" AcceptsReturn="True" Height="250" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12"/>
+    </StackPanel></ScrollViewer>
+   </TabItem>
+  </TabControl>
+  <Border Grid.Row="3" Background="#182230" Padding="12" Margin="0,18,0,0" CornerRadius="5"><TextBlock Text="{Binding Message}" TextWrapping="Wrap" MaxHeight="100"/></Border>
+ </Grid></Border>
+</Window>

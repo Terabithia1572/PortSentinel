@@ -1,0 +1,20 @@
+PortSentinel
+Geliştirici: Yunus İNAN
+Copyright © 2026 Yunus İNAN. Tüm hakları saklıdır.
+https://github.com/terabithia1572
+
+Bu paket USB cihazlarını keşfeden ve istenen izin kayıtlarını yöneten sürümü kurar.
+Windows servisi arayüz kapalıyken de çalışır. .NET 10 x64 çalışma zamanı pakete dahildir.
+
+Fiziksel USB dosya erişimi engellemesi bu sürümde doğrulanmış değildir.
+İzin kaydı eklemek veya kaldırmak Windows cihaz erişim politikasını etkinleştirmez.
+Kurulum USBSTOR, Defender, GPO veya MDM erişim politikalarını değiştirmez.
+
+Kurulum hedefi: Windows 10 ve Windows 11 x64.
+Home, Pro, Enterprise ve Education edisyonlarında sürüm/destek tarihi engeli yoktur.
+Kurulum yönetici yetkisi ister. Standart kullanıcılar görüntüleyebilir;
+izin yönetimi için programı yönetici olarak açın.
+
+Kaldırma, PortSentinel servis kaydını ve kurulan dosyaları kaldırır.
+C:\ProgramData\PortSentinel altındaki veritabanı ve denetim kayıtları korunur.
+Mevcut sürümde yerinde güncelleme desteklenmez; önce eski sürümü kaldırın.

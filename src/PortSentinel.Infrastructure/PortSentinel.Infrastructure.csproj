@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <ItemGroup><ProjectReference Include="../PortSentinel.Application/PortSentinel.Application.csproj"/></ItemGroup>
+ <ItemGroup><PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/><PackageReference Include="Microsoft.EntityFrameworkCore.Design"><PrivateAssets>all</PrivateAssets></PackageReference><PackageReference Include="Microsoft.Extensions.DependencyInjection"/></ItemGroup>
+ <ItemGroup><EmbeddedResource Include="Windows/Inventory.ps1"/><EmbeddedResource Include="Windows/Diagnostics.ps1"/></ItemGroup>
+</Project>

@@ -1,0 +1,96 @@
+name: Windows CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      build_installer:
+        description: Self-contained Inno Setup EXE de üret
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  NUGET_PACKAGES: ${{ runner.temp }}/portsentinel-nuget
+
+jobs:
+  build-test:
+    name: Release build ve Windows testleri
+    runs-on: windows-2025
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Kaynakları al
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            src/**/packages.lock.json
+            tests/**/packages.lock.json
+      - name: Kilitli restore, build, test ve publish
+        run: ./scripts/Build.ps1
+      - name: PowerShell sözdizimi
+        run: |
+          $errorsFound = @()
+          Get-ChildItem scripts,src/PortSentinel.Infrastructure/Windows -Filter *.ps1 -File | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$parseErrors) | Out-Null
+            $errorsFound += $parseErrors
+          }
+          if ($errorsFound.Count) { $errorsFound | Format-List; throw 'PowerShell sözdizimi hatası.' }
+      - name: Test raporları
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-results
+          path: artifacts/test-results/*.trx
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Framework-dependent paketi sakla
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: PortSentinel-win-x64-framework-dependent
+          path: artifacts/publish/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Inno Setup hazırla
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.build_installer == true
+        run: |
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if (-not (Test-Path -LiteralPath $compiler)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup kurulamadı.' }
+          }
+      - name: Self-contained setup üret
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.build_installer == true
+        run: ./scripts/Build-Setup.ps1 -SkipTests
+      - name: Setup paketini sakla
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.build_installer == true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: PortSentinel-win-x64-setup
+          path: |
+            artifacts/installer/PortSentinel-Setup-*.exe
+            artifacts/installer/PortSentinel-Setup-*.sha256
+          retention-days: 14
+          if-no-files-found: error

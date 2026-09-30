@@ -1,0 +1,42 @@
+name: Hata bildirimi
+description: Kurulum, arayüz, keşif veya veri yönetiminde tekrarlanabilir hata bildirin.
+title: "[Hata] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: "Güvenlik açıkları için SECURITY.md içindeki özel kanalı kullanın. USB seri numarası, SID, DB/log dosyası veya token paylaşmayın."
+  - type: input
+    id: version
+    attributes:
+      label: PortSentinel sürümü veya commit
+      placeholder: "1.0.1"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows sürümü ve mimarisi
+      placeholder: "Windows 11 Pro 23H2, build 22631, x64"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Çalıştırma biçimi
+      options:
+        - Setup EXE
+        - PowerShell / ZIP kurulumu
+        - Geliştirme modu
+  - type: textarea
+    id: steps
+    attributes:
+      label: Yeniden üretme adımları
+      description: Yapılan işlemi, beklenen ve gerçekleşen sonucu açıklayın.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Temizlenmiş hata metni veya ekran görüntüsü
+      description: Kişisel ve cihaz kimliği bilgilerini kaldırın.
