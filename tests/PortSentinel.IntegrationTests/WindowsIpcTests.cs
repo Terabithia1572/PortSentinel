@@ -29,7 +29,7 @@ public sealed class WindowsIpcTests(ITestOutputHelper output)
             Assert.Equal(new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator), response.Snapshot!.IsAdministrator);
             Assert.False(response.Snapshot.Backend.ProtectionVerified);
         }
-        finally { await ct.CancelAsync(); await Assert.ThrowsAnyAsync<OperationCanceledException>(() => running); }
+        finally { await StopServerAsync(ct, running); }
     }
     [Fact] public async Task Restricted_standard_token_cannot_mutate_through_real_pipe()
     {
@@ -52,7 +52,7 @@ public sealed class WindowsIpcTests(ITestOutputHelper output)
             Assert.False(response.Success); Assert.Equal("Unauthorized", response.Error!.Code);
             Assert.Equal(10, (await f.Store.ReadAsync(default)).Settings.ScanIntervalSeconds);
         }
-        finally { token?.Dispose(); pinned.Free(); await ct.CancelAsync(); await Assert.ThrowsAnyAsync<OperationCanceledException>(() => running); }
+        finally { token?.Dispose(); pinned.Free(); await StopServerAsync(ct, running); }
     }
     [Fact] public async Task Spoofed_admin_field_is_rejected_and_server_accepts_next_connection()
     {
@@ -71,7 +71,15 @@ public sealed class WindowsIpcTests(ITestOutputHelper output)
             }
             Assert.True((await new PipeSentinelClient(name, true).SendAsync(new(1, Operation.Snapshot), ct.Token)).Success);
         }
-        finally { await ct.CancelAsync(); await Assert.ThrowsAnyAsync<OperationCanceledException>(() => running); }
+        finally { await StopServerAsync(ct, running); }
+    }
+    private static async Task StopServerAsync(CancellationTokenSource cancellation, Task server)
+    {
+        await cancellation.CancelAsync();
+        // Cancellation may end the loop between requests or interrupt WaitForConnectionAsync.
+        // Both are valid shutdowns; authentication assertions above must not depend on that race.
+        try { await server; }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
     }
     [StructLayout(LayoutKind.Sequential)] private struct SidAndAttributes { public IntPtr Sid; public uint Attributes; }
     private sealed class TestLogger(ITestOutputHelper output) : ILogger<PipeServer>
