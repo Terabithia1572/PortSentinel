@@ -2,7 +2,7 @@
 
 ## Sonuç
 
-Release build: **başarılı, 0 hata / 0 uyarı**. Kilitli restore ve iki x64 framework-dependent publish başarılı. **24 unit + 18 integration = 42 başarılı; 0 başarısız, 0 atlanan**. Beş WPF ekranı gerçek geliştirme servisine bağlandı, ekran görüntüleri üretildi, binding hata logu boş; süreç başarılı kapanış kodu üretti.
+Release build: **başarılı, 0 hata / 0 uyarı**. **24 unit + 18 integration = 42 başarılı; 0 başarısız, 0 atlanan**; ek **10 Windows PowerShell 5.1 kurulum regresyonu** geçti. 1.0.2 Inno setup ile gerçek LocalService/SCM kurulumu, üretim IPC/PID doğrulaması ve beş WPF ekranı çalıştırıldı; binding hata logu boş ve WPF çıkışı 0.
 
 Bu sonuçlar fiziksel USB dosya erişimi engelini kanıtlamaz. Bu teslimatta Windows politika yazma motoru yoktur. Ürünün asıl erişim denetimi kabulü **tamamlanmadı**.
 
@@ -27,7 +27,7 @@ Bu gruptaki cihaz envanteri/backend yalnız test projesindeki kontrollü double'
 - **WindowsIpc (3):** gerçek Named Pipe + ACL, sunucuda gerçek Windows token rolü; Administrators SID'si deny-only yapılmış ve ayrıcalıkları kısıtlanmış token'ın Settings komutunda Unauthorized alması; sahte admin alanının reddi ve sonraki bağlantının çalışması.
 - **WindowsReadOnly (2):** gerçek CIM/PnP envanter betiğinin çalışması (bağlı USB bulunmadı); gerçek OS/Defender tanılamasının korumayı doğrulanmamış göstermesi.
 
-Kısıtlı token testi ayrı bir yerel standart kullanıcı hesabıyla SCM kabulünün yerine geçmez. Üretim istemcisinin SCM PID eşleştirmesi ve LocalService altında keşif/DB izinleri kurulu servis üzerinde ayrıca test edilmelidir.
+Kısıtlı token testi ayrı bir yerel standart kullanıcı hesabının yerine geçmez. 1.0.2'de üretim SCM PID eşleştirmesi, LocalService altında keşif/tanılama ve SQLite/ACL erişimi gerçek kurulu serviste doğrulandı; ayrı standart kullanıcı oturumu henüz denenmedi.
 
 ## WPF / gerçek servis smoke
 
@@ -42,16 +42,31 @@ Kanıt dosyaları proje kökünde:
 - `artifacts/publish/checksums.json`
 - `artifacts/publish/THIRD-PARTY-NOTICES.json` (50 paket lisans metadata kaydı)
 
-Son publish ikilileriyle servis–WPF bağlantısı ayrıca çalıştırıldı. PE header x64 olarak doğrulandı; paket dosyalarının SHA256 manifesti kontrol edildi. Smoke sırasında bağlı USB sayısı sıfırdı. Test için başlatılan servisler teslimat öncesinde durduruldu; Windows servis kaydı oluşturulmadı.
+1.0.2 kurulu self-contained ikililerle WPF `--smoke-test` geliştirme bayrağı olmadan çalıştırıldı. SCM Running/LocalService, tırnaklı binary yolu ve pipe sunucusu PID eşleşti. Beş ekran render edildi, binding logu 0 byte; arayüz `Servis bağlı · IPC doğrulandı` gösterdi. LocalService'in erişemediği Defender Policy Manager anahtarı ayrı tanılama satırında raporlandı. Bağlı USB sayısı sıfırdı.
+
+## Gerçek kurulum kabulü — 1.0.2
+
+1.0.1 EXE'siyle kullanıcı hatası aynen yeniden üretildi: PowerShell 5.1 manifest dizisini yanlış okuyarak `ChildPath` hatası verdi; `AfterInstall` hatası yutulduğu için setup çıkışı 0 oldu, servis/veri dizini oluşmadı. Yeni setup kritik işlemleri `PrepareToInstall` içinde yapar; başarısız denemeler çıkış 7 ile durdu ve başarı ekranına geçmedi.
+
+- 1.0.1'den kalan, servis/ProgramData bulunmayan paket dosyalarının yerinde onarımı.
+- LocalService hesabıyla Running servis, tırnaklı SCM yolu ve gerçek snapshot/PID kabulü.
+- Temiz kurulum ve çalışan servisin yerinde yeniden kurulması.
+- Normal kaldırmada servis/payload kaldırılması, SQLite'ın byte-for-byte korunması ve bilinmeyen dosyanın korunması.
+- Korunan veriyle tekrar kurulum.
+- ProgramData/receipt bulunmayan durumda kaldırma; boş uygulama dizini de temizlenir.
+
+`scripts/Test-SetupScripts.ps1`: Windows PowerShell 5.1 JSON dizi okuma, eksik/boş veri dizini, eski kaldırıcıdan kalan boş program dizini, eksik payload onarımı, path traversal, değiştirilmiş dosya ve yabancı servis/dizin kontrolleri — **10 başarılı**.
+
+`scripts/Test-InstallerLifecycle.ps1`: yalnız başlangıçta servis/uygulama/veri dizini olmayan yönetici test makinesinde çalışır. Gerçek kurulum, çalışan servis onarımı, kaldırma, veriyle tekrar kurulum ve eksik veri dizini kaldırmasını kontrol eder; test verisini çalışma alanındaki artifact dizinine taşır. Sürüm tag/manuel installer CI akışına eklendi. Yerel kanıtlar `artifacts/installer/acceptance-*.log/json` ve `artifacts/lifecycle/*/verification.json` altında; makineye özel loglar kaynak Git geçmişine eklenmez.
 
 ## Çalıştırılan komutlar
 
-`scripts/Build.ps1`: `dotnet restore --locked-mode`, Release build, no-build test ve Service/Desktop publish. EF migration kaynakları üretildi; Release model/snapshot tutarlılığı kontrol edildi. Bütün PowerShell dosyaları parser ile doğrulandı; Install/Uninstall/Test-Hardware gerçek makinede çalıştırılmadı.
+`scripts/Build.ps1` ve `scripts/Build-Setup.ps1`: kilitli restore, Release build, test ve Service/Desktop publish. EF migration/model tutarlılığı doğrulandı. Setup/Install/Uninstall gerçek makinede çalıştırıldı; Test-Hardware çalıştırılmadı.
 
-## Donanım / kurulum kabulü — çalıştırılmadı
+## Donanım / yeniden başlatma kabulü — çalıştırılmadı
 
-Yetkisiz yeni/önceden kurulmuş/boot öncesi USB, fiziksel 10 cihaz, hub/port, gerçek çok bölüm/LUN, UASP, seri çakışması, açık handle/yazma iptali, servis duruşunda/reboot'ta koruma, keyboard/mouse/internal disk etkilenmeme, GPO/MDM priority, lisans/engine readback, yetkili kurulum/kaldırma ve değişmiş politikaya dokunmayan geri alma. [Ayrı kabul protokolü](DONANIM-KABUL.md).
+Yetkisiz yeni/önceden kurulmuş/boot öncesi USB, fiziksel 10 cihaz, hub/port, gerçek çok bölüm/LUN, UASP, seri çakışması, açık handle/yazma iptali, servis duruşunda/reboot'ta koruma, keyboard/mouse/internal disk etkilenmeme, GPO/MDM priority ve lisans/engine readback. [Ayrı kabul protokolü](DONANIM-KABUL.md).
 
 ## Bilinen sınırlar
 
-Fiziksel engelleme backend'i yok; yalnız lisanslı motor adayı ve inceleme XML'i var. Polling olayları kısa bağlantıları kaçırabilir. Mount-point-only volume ayrıntıları tam toplanmaz. Donanım kimliği taklit edilebilir. Windows 10 üzerinde ayrı kabul testi yapılmadı. Kurulum betiklerinin sözdizimi ve Windows 11 üzerindeki salt okunur ön kontrol doğrulandı; gerçek SCM/ACL/recovery yetenekleri kurulmuş VM'de kabul testi bekler.
+Fiziksel engelleme backend'i yok; yalnız lisanslı motor adayı ve inceleme XML'i var. Polling olayları kısa bağlantıları kaçırabilir. Mount-point-only volume ayrıntıları tam toplanmaz. Donanım kimliği taklit edilebilir. Windows 10 üzerinde ayrı kabul ve reboot/SCM failure-recovery senaryoları yapılmadı. Windows 11 üzerinde gerçek kurulum/ACL/LocalService/IPC/kaldırma akışı kabul edildi.

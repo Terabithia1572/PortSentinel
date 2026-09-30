@@ -58,6 +58,9 @@ jobs:
             $errorsFound += $parseErrors
           }
           if ($errorsFound.Count) { $errorsFound | Format-List; throw 'PowerShell sözdizimi hatası.' }
+      - name: Windows PowerShell 5.1 kurulum regresyonları
+        shell: powershell
+        run: ./scripts/Test-SetupScripts.ps1
       - name: Test raporları
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -84,6 +87,19 @@ jobs:
       - name: Self-contained setup üret
         if: startsWith(github.ref, 'refs/tags/v') || inputs.build_installer == true
         run: ./scripts/Build-Setup.ps1 -SkipTests
+      - name: Gerçek SCM kurulum, onarım, kaldırma ve veri koruma
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.build_installer == true
+        run: ./scripts/Test-InstallerLifecycle.ps1
+      - name: Kurulum kabul günlükleri
+        if: always() && (startsWith(github.ref, 'refs/tags/v') || inputs.build_installer == true)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: installer-lifecycle
+          path: |
+            artifacts/lifecycle/**/*.log
+            artifacts/lifecycle/**/verification.json
+          retention-days: 14
+          if-no-files-found: warn
       - name: Setup paketini sakla
         if: startsWith(github.ref, 'refs/tags/v') || inputs.build_installer == true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

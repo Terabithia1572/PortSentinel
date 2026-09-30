@@ -26,7 +26,9 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Publish başarısız: $project" }
     }
     New-Item -ItemType Directory -Path 'artifacts/publish/scripts','artifacts/publish/docs' -Force | Out-Null
-    Copy-Item -LiteralPath 'scripts/Install.ps1','scripts/Uninstall.ps1' -Destination 'artifacts/publish/scripts'
+    foreach ($script in @('Install.ps1','Uninstall.ps1','Setup.Common.ps1','Test-ServiceConnection.ps1')) {
+        [IO.File]::WriteAllText((Join-Path $publishRoot "scripts/$script"), [IO.File]::ReadAllText((Join-Path $PSScriptRoot $script)), [Text.UTF8Encoding]::new($true))
+    }
     Copy-Item -LiteralPath 'README.md' -Destination 'artifacts/publish'
     Get-ChildItem -LiteralPath 'docs' | Copy-Item -Destination 'artifacts/publish/docs' -Recurse
     Copy-Item -LiteralPath 'NOTICE.md','CHANGELOG.md' -Destination 'artifacts/publish'

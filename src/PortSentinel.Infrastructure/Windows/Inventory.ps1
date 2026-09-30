@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 function Read-Property($Instance, $Key) {
     $p = Get-PnpDeviceProperty -InstanceId $Instance -KeyName $Key -ErrorAction SilentlyContinue

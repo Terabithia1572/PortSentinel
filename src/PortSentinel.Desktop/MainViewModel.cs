@@ -32,11 +32,11 @@ public sealed class MainViewModel(ISentinelClient client) : ObservableObject, ID
     public string Preview { get => preview; private set => Set(ref preview, value); }
     public int ScanSeconds { get => scanSeconds; set => Set(ref scanSeconds, value); }
     public int RetentionDays { get => retentionDays; set => Set(ref retentionDays, value); }
-    public string Role => admin ? "Yönetici token'ı doğrulandı" : "Salt görüntüleme · yönetmek için yönetici olarak açın";
+    public string Role => !Connected ? "Servis bağlantısı bekleniyor" : admin ? "Yönetici token'ı doğrulandı" : "Salt görüntüleme · yönetmek için yönetici olarak açın";
     public string RevisionSummary => $"İstenen revizyon: {snapshot?.DesiredRevision ?? 0}  ·  Etkin revizyon: doğrulanmadı";
     public string InventorySummary => !Connected ? "Servis bağlantısı yok; cihaz listesi güncel kabul edilmez."
         : snapshot?.InventoryError ?? $"Son tarama: {snapshot?.InventoryUtc?.ToLocalTime():dd.MM.yyyy HH:mm:ss}";
-    public string Diagnostics => snapshot == null ? "Servise bağlanınca tanılama bilgileri burada gösterilir." : string.Join(Environment.NewLine + Environment.NewLine, snapshot.Backend.Diagnostics);
+    public string Diagnostics => !Connected ? Message : snapshot == null ? "Servise bağlanınca tanılama bilgileri burada gösterilir." : string.Join(Environment.NewLine + Environment.NewLine, snapshot.Backend.Diagnostics);
     public string DeviceDetails => SelectedDevice == null ? "Kimlik ve volume bilgilerini görmek için cihaz seçin." :
         $"Fiziksel düğüm: {SelectedDevice.Data.Identity.InstanceId}\nSeri: {SelectedDevice.Data.Identity.Serial}\nVID/PID: {SelectedDevice.Data.Identity.Vid}/{SelectedDevice.Data.Identity.Pid}\n" +
         $"Kimlik: {SelectedDevice.Quality}\nDiskler: {string.Join("\n", SelectedDevice.Data.Disks)}\n" +
@@ -91,8 +91,8 @@ public sealed class MainViewModel(ISentinelClient client) : ObservableObject, ID
         catch (Exception ex)
         {
             Connected = false; admin = false; ServiceStatus = "Servise erişilemiyor"; ProtectionStatus = "Güncel koruma durumu bilinmiyor";
-            Message = "Servis bağlantısı kesildi: " + ex.Message;
-            Raise(nameof(Role)); Raise(nameof(InventorySummary));
+            Message = ex is OperationCanceledException ? "Servis yanıtı zaman aşımına uğradı. Yenile'ye basın; devam ederse güncel setup ile kurulumu onarın. Günlükler: ProgramData\\PortSentinel\\logs." : "Servis bağlantısı kesildi: " + ex.Message;
+            Raise(nameof(Role)); Raise(nameof(InventorySummary)); Raise(nameof(Diagnostics));
         }
         finally { Busy = false; Raise(nameof(CanManage)); }
     }

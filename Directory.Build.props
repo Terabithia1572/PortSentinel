@@ -8,7 +8,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <PlatformTarget>x64</PlatformTarget>
     <LangVersion>latest</LangVersion>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Company>Yunus İNAN</Company>
     <Authors>Yunus İNAN</Authors>
     <Copyright>Copyright © 2026 Yunus İNAN. Tüm hakları saklıdır.</Copyright>

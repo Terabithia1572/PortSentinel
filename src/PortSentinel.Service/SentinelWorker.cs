@@ -12,7 +12,7 @@ internal sealed class SentinelWorker(IPolicyStore store, SentinelCoordinator coo
         try
         {
             await store.InitializeAsync(stoppingToken);
-            await coordinator.ReconcileAsync(stoppingToken);
+            // Listen before the first CIM scan, which can take 25 seconds on some machines.
             var tasks = new[] { pipe.RunAsync(lifetime.Token), ReconciliationLoopAsync(lifetime.Token) };
             await Task.WhenAny(tasks);
             await lifetime.CancelAsync();
@@ -30,11 +30,11 @@ internal sealed class SentinelWorker(IPolicyStore store, SentinelCoordinator coo
     {
         while (!ct.IsCancellationRequested)
         {
-            var settings = (await store.ReadAsync(ct)).Settings;
-            await Task.Delay(TimeSpan.FromSeconds(settings.ScanIntervalSeconds), ct);
             try { await coordinator.ReconcileAsync(ct); }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception ex) { logger.LogError(ex, "Reconciliation failed; enforcement remains unverified"); }
+            var settings = (await store.ReadAsync(ct)).Settings;
+            await Task.Delay(TimeSpan.FromSeconds(settings.ScanIntervalSeconds), ct);
         }
     }
 }

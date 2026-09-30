@@ -24,13 +24,13 @@ PowerShell/ZIP ile kurulduysa masaüstünü kapatın; kaynak paketten yükseltil
 .\scripts\Uninstall.ps1
 ```
 
-Kaldırıcı servis binary yolu, korumalı receipt ve kurulum kökü kapsamını doğrular; yalnız receipt'teki hash'i değişmemiş dosyaları siler. Sonradan değişen dosya varsa hiçbir dosya silmeden reddeder. Bilinmeyen dosyalar ve ProgramData/DB/audit/başlangıç yedeği korunur. Dizindeki reparse point'ler reddedilir. Windows politikaları değişmez. Kaldırma canlı sistemde henüz çalıştırılmadı; VM kabul testi gereklidir.
+Kaldırıcı servis binary yolu, receipt/paket işareti ve kurulum kökü kapsamını doğrular; yalnız hash'i değişmemiş paket dosyalarını siler. Sonradan değişen dosya varsa hiçbir dosya silmeden reddeder. Bilinmeyen dosyalar ve ProgramData/DB/audit/başlangıç yedeği korunur. Dizindeki reparse point'ler reddedilir. Windows politikaları değişmez. 1.0.2 üzerinde gerçek kaldırma, bilinmeyen dosya korunması, DB'nin byte-for-byte korunması ve ProgramData eksikliği senaryosu Windows 11'de doğrulandı.
 
 ## Güncelleme
 
-Bu teslimatta yerinde upgrade kurucusu yoktur. Servisi durdurup korumalı DB yedeği alın, eski paket kaldırıcıyla dosyaları kaldırın, yeni paketi build edip kurun. Korunan ProgramData receipt veri sahipliğini gösterir. Yeni migration'ların geri uyumluluğu ayrıca incelenmelidir; eski binary ile yeni DB şemasına dönmeyin.
+1.0.2 ile aynı uygulama kimliğine ait eski/yarım kurulum yerinde onarılır. PortSentinel pencerelerini kapatıp güncel setup'ı çalıştırın. 1.0.1'de `ProgramData bulunamadı` nedeniyle eski kaldırıcı takılıyorsa önce kaldırmaya çalışmanız veya klasör silmeniz gerekmez. Paket işareti ve hash manifesti doğrulandıktan sonra eksik veri dizini/servis oluşturulur. Mevcut veritabanı, izinler, audit ve ayarlar korunur. Yeni migration'ların geri uyumluluğu ayrıca incelenmelidir; eski binary ile yeni DB şemasına dönmeyin.
 
-Kurulum başarısızsa betik yalnız o çalıştırmada oluşturduğu servis kaydını kaldırır; kopyalanmış dosyalar/receipt kalabilir. Kaldırıcıyla temizleyip tekrar kurun. Hata sonrası klasörleri genel recursive delete ile temizlemeyin.
+Kurulum başarısızsa betik yalnız o çalıştırmada oluşturduğu servis kaydını kaldırır; kopyalanmış dosyalar/receipt kalabilir. Sorunu giderip setup'ı yeniden çalıştırın. Değiştirilmiş dosya veya başka araca ait servis kontrolü geçmezse o dosya/servisin kaynağını inceleyin; klasörleri genel recursive delete ile temizlemeyin.
 
 ## Üretim motoru için geri alma şartı
 

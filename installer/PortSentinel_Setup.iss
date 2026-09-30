@@ -1,7 +1,7 @@
-; TerabithiaDesktop_Setup.iss temel alınarak PortSentinel için uyarlanmıştır.
+﻿; TerabithiaDesktop_Setup.iss temel alınarak PortSentinel için uyarlanmıştır.
 ; Derleme: scripts\Build-Setup.ps1. Kurulum sırasında USB politikası uygulanmaz.
 #ifndef AppVersion
-  #define AppVersion "1.0.1"
+  #define AppVersion "1.0.2"
 #endif
 #ifndef PayloadDir
   #define PayloadDir SourcePath + "..\artifacts\setup-payload"
@@ -48,7 +48,7 @@ ArchitecturesInstallIn64BitMode=x64os
 MinVersion=10.0
 PrivilegesRequired=admin
 SetupLogging=yes
-CloseApplications=yes
+CloseApplications=no
 RestartApplications=no
 Uninstallable=yes
 UninstallFilesDir={app}
@@ -64,21 +64,26 @@ FinishedLabel=PortSentinel ve Windows servisi kuruldu.%n%nGeliştirici: Yunus İ
 [Tasks]
 Name: "desktopicon"; Description: "Masaüstüne kısayol oluştur"; GroupDescription: "Ek görevler:"; Flags: unchecked
 
+[Dirs]
+; Payload PrepareToInstall icinde olusturulur; bos ana dizini kaldiriciya da kaydet.
+Name: "{app}"; Flags: uninsalwaysuninstall
+
 [Files]
-Source: "{#PayloadDir}\service\*"; DestDir: "{app}\service"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PayloadDir}\desktop\*"; DestDir: "{app}\desktop"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PayloadDir}\scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion
-Source: "{#PayloadDir}\docs\*"; DestDir: "{app}\docs"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PayloadDir}\README.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#PayloadDir}\NOTICE.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#PayloadDir}\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#PayloadDir}\THIRD-PARTY-NOTICES.json"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#PayloadDir}\THIRD-PARTY-LICENSES\*"; DestDir: "{app}\THIRD-PARTY-LICENSES"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PayloadDir}\PortSentinel.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#PayloadDir}\installer-owner.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#PayloadDir}\checksums.json"; DestDir: "{app}"; Flags: ignoreversion; AfterInstall: RegisterPortSentinelService
+Source: "{#PayloadDir}\service\*"; DestDir: "{app}\service"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs
+Source: "{#PayloadDir}\desktop\*"; DestDir: "{app}\desktop"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs
+Source: "{#PayloadDir}\scripts\*"; DestDir: "{app}\scripts"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\docs\*"; DestDir: "{app}\docs"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs
+Source: "{#PayloadDir}\README.md"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\NOTICE.md"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\CHANGELOG.md"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\THIRD-PARTY-NOTICES.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\THIRD-PARTY-LICENSES\*"; DestDir: "{app}\THIRD-PARTY-LICENSES"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs
+Source: "{#PayloadDir}\PortSentinel.ico"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\installer-owner.txt"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\checksums.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\scripts\Test-SetupEnvironment.ps1"; Flags: dontcopy
 Source: "{#PayloadDir}\scripts\Undo-SetupService.ps1"; Flags: dontcopy
+Source: "{#PayloadDir}\scripts\Setup.Common.ps1"; Flags: dontcopy
 
 [Icons]
 Name: "{group}\PortSentinel"; Filename: "{app}\desktop\PortSentinel.Desktop.exe"; WorkingDir: "{app}\desktop"
@@ -93,7 +98,7 @@ var
   ServiceRegistered: Boolean;
   InstallationCommitted: Boolean;
 
-function RunSetupAction(Action, ScriptPath, LogPath: String; var Detail: String): Boolean;
+function RunSetupAction(Action, ScriptPath, LogPath, PackagePath: String; var Detail: String): Boolean;
 var
   ExitCode: Integer;
   Index: Integer;
@@ -102,6 +107,7 @@ var
 begin
   Parameters := '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + ScriptPath + '"';
   if Action <> '' then Parameters := Parameters + ' -Action ' + Action;
+  if PackagePath <> '' then Parameters := Parameters + ' -PackagePath "' + PackagePath + '"';
   Parameters := Parameters + ' -LogPath "' + LogPath + '"';
   Result := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), Parameters, '', SW_HIDE, ewWaitUntilTerminated, ExitCode);
   if Result then Result := ExitCode = 0;
@@ -119,23 +125,24 @@ end;
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   Detail: String;
+  StagedPackage: String;
 begin
+  Result := '';
+  if ServiceRegistered then exit;
   ExtractTemporaryFile('Test-SetupEnvironment.ps1');
   ExtractTemporaryFile('Undo-SetupService.ps1');
-  if RunSetupAction('', ExpandConstant('{tmp}\Test-SetupEnvironment.ps1'), ExpandConstant('{tmp}\PortSentinel-preflight.log'), Detail) then
-    Result := ''
-  else
+  ExtractTemporaryFile('Setup.Common.ps1');
+  if not RunSetupAction('', ExpandConstant('{tmp}\Test-SetupEnvironment.ps1'), ExpandConstant('{tmp}\PortSentinel-preflight.log'), '', Detail) then begin
     Result := 'Kurulum ön kontrolü başarısız:' + #13#10 + Detail;
-end;
-
-procedure RegisterPortSentinelService;
-var
-  Detail: String;
-begin
-  { AfterInstall hatası kurulumun dosya işlemleri içinde oluşur: fatal hata ve rollback. }
-  if not RunSetupAction('Install', ExpandConstant('{app}\scripts\Invoke-SetupAction.ps1'), ExpandConstant('{tmp}\PortSentinel-service-install.log'), Detail) then begin
-    SuppressibleMsgBox('PortSentinel servisi kurulamadı. Kurulum tamamlanmadı.' + #13#10 + Detail, mbError, MB_OK, IDOK);
-    Abort;
+    exit;
+  end;
+  { Before/AfterInstall hataları Inno tarafından yutulur. Kritik kurulum bu kapıdadır. }
+  { ExtractTemporaryFiles alt dizinleri ve acilmamis uygulama dizini parcasini korur. }
+  ExtractTemporaryFiles('{app}\*');
+  StagedPackage := ExpandConstant('{tmp}') + '\{app}';
+  if not RunSetupAction('Install', StagedPackage + '\scripts\Invoke-SetupAction.ps1', ExpandConstant('{tmp}\PortSentinel-service-install.log'), StagedPackage, Detail) then begin
+    Result := 'PortSentinel servisi kurulamadı. Kurulum tamamlanmadı:' + #13#10 + Detail;
+    exit;
   end;
   ServiceRegistered := True;
 end;
@@ -151,7 +158,7 @@ var
 begin
   { Servisten sonra kısayol/registry aşaması başarısızsa yalnız bu kurulumun servisini geri al. }
   if ServiceRegistered and not InstallationCommitted then begin
-    if not RunSetupAction('', ExpandConstant('{tmp}\Undo-SetupService.ps1'), ExpandConstant('{tmp}\PortSentinel-service-rollback.log'), Detail) then
+    if not RunSetupAction('', ExpandConstant('{tmp}\Undo-SetupService.ps1'), ExpandConstant('{tmp}\PortSentinel-service-rollback.log'), '', Detail) then
       Log('Servis geri alma başarısız: ' + Detail);
   end;
 end;
@@ -162,7 +169,7 @@ var
 begin
   { Bu aşama kullanıcı kaldırmayı onayladıktan sonra, dosyalar silinmeden önce çalışır. }
   if CurUninstallStep = usUninstall then begin
-    if not RunSetupAction('Uninstall', ExpandConstant('{app}\scripts\Invoke-SetupAction.ps1'), ExpandConstant('{tmp}\PortSentinel-service-uninstall.log'), Detail) then begin
+    if not RunSetupAction('Uninstall', ExpandConstant('{app}\scripts\Invoke-SetupAction.ps1'), ExpandConstant('{tmp}\PortSentinel-service-uninstall.log'), '', Detail) then begin
       SuppressibleMsgBox('Servis/sahiplik kontrolü başarısız. Kaldırma durduruldu, dosyalar korundu.' + #13#10 + Detail, mbError, MB_OK, IDOK);
       Abort;
     end;

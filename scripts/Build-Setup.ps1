@@ -25,6 +25,8 @@ try {
     if (-not $SkipTests) {
         & dotnet test PortSentinel.sln -c Release --no-build --no-restore --logger 'trx;LogFilePrefix=setup' --results-directory artifacts/test-results
         if ($LASTEXITCODE -ne 0) { throw 'Test başarısız.' }
+        & "$env:WINDIR/System32/WindowsPowerShell/v1.0/powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Test-SetupScripts.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'Windows PowerShell 5.1 kurulum testleri başarısız.' }
     }
     if (Test-Path -LiteralPath $payload) {
         $marker = Join-Path $payload 'installer-owner.txt'
@@ -48,7 +50,7 @@ try {
     }
     New-Item -ItemType Directory -Path (Join-Path $payload 'scripts'),(Join-Path $payload 'docs'),(Join-Path $payload 'THIRD-PARTY-LICENSES') -Force | Out-Null
     # Windows PowerShell 5.1 için Türkçe metinli betikleri UTF-8 BOM ile paketle.
-    foreach ($script in @('Install.ps1','Uninstall.ps1','Invoke-SetupAction.ps1','Test-SetupEnvironment.ps1','Undo-SetupService.ps1')) {
+    foreach ($script in @('Install.ps1','Uninstall.ps1','Invoke-SetupAction.ps1','Test-SetupEnvironment.ps1','Undo-SetupService.ps1','Setup.Common.ps1','Test-ServiceConnection.ps1')) {
         $sourceText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot $script))
         [IO.File]::WriteAllText((Join-Path $payload "scripts/$script"), $sourceText, [Text.UTF8Encoding]::new($true))
     }

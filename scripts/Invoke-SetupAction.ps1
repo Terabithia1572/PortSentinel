@@ -1,11 +1,12 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][ValidateSet('Install','Uninstall')][string]$Action, [Parameter(Mandatory)][string]$LogPath)
+param([Parameter(Mandatory)][ValidateSet('Install','Uninstall')][string]$Action, [Parameter(Mandatory)][string]$LogPath, [string]$PackagePath)
 $ErrorActionPreference = 'Stop'
 try {
     if ($Action -eq 'Install') {
-        $output = & (Join-Path $PSScriptRoot 'Install.ps1') -PackagePath (Split-Path -Parent $PSScriptRoot) -UseInstalledFiles -SelfContained *>&1 | Out-String
+        if (-not $PackagePath) { throw 'Setup paket yolu eksik.' }
+        $output = & (Join-Path $PSScriptRoot 'Install.ps1') -PackagePath $PackagePath -InnoSetup -SelfContained *>&1 | Out-String
     } else {
-        $output = & (Join-Path $PSScriptRoot 'Uninstall.ps1') -KeepFiles *>&1 | Out-String
+        $output = & (Join-Path $PSScriptRoot 'Uninstall.ps1') -RemoveInstalledPayload *>&1 | Out-String
     }
     [IO.File]::WriteAllText($LogPath, $output, [Text.UTF8Encoding]::new($true))
     Write-Host $output

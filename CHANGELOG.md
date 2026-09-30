@@ -1,5 +1,17 @@
 # Değişiklik günlüğü
 
+## 1.0.2 — 30 Eylül 2026
+
+- 1.0.1 kurulum hatası gerçek setup ile yeniden üretildi: Windows PowerShell 5.1 JSON manifestini iç içe dizi okuyordu; servis kayıt betiği `ChildPath` hatasıyla duruyordu. Manifest okuma iki PowerShell sürümünde uyumlu hale getirildi.
+- Inno Setup `AfterInstall` istisnalarını yuttuğundan, başarısız servis kurulumu yanlışlıkla başarılı gösteriliyordu. Kritik kurulum `PrepareToInstall` aşamasına taşındı; SCM/LocalService ve gerçek Named Pipe snapshot yanıtı doğrulanmadan kurulum devam etmez.
+- Sahipliği doğrulanmış yarım/eski kurulum yerinde onarılır. Eksik ProgramData veya henüz oluşturulmamış servis, tekrar kurulumu engellemez.
+- Kaldırıcı eksik veri/receipt durumunda paket işareti ve hash manifestinden sahiplik doğrular; yalnız değişmemiş paket dosyalarını kaldırır. Bilinmeyen dosyalar ve mevcut ProgramData korunur.
+- Servis ilk uzun CIM taramasından önce IPC dinlemeye başlar. Arayüz kurulu olmayan/duran servisi Türkçe ve yapılacak işlemi belirten mesajla gösterir.
+- Inno Restart Manager'ın kurulumdan hemen sonra yeni servisi durdurması önlendi; açık PortSentinel pencereleri için kapatma isteği gösterilir. SCM binary yolu Windows PowerShell tırnak işlemesinden bağımsız, tırnaklı olarak kaydedilir.
+- LocalService'in okuyamadığı yönetim registry anahtarları tanılamada ayrı raporlanır; diğer göstergeler kaybolmaz.
+- Kaldırıcı boş uygulama dizinini de temizler; eski kaldırıcıdan kalmış tamamen boş dizin tekrar kurulumu engellemez.
+- Windows PowerShell 5.1 üzerinde 10 kurulum/sahiplik regresyonu ve gerçek SCM kurulum–onarım–kaldırma kabul akışı CI'a eklendi. Windows 10/11 x64 hedefi ve geliştirici Yunus İNAN korunur.
+
 ## 1.0.1 — 30 Eylül 2026
 
 - Windows 10 ve Windows 11 x64 kurulum hedefi genişletildi.

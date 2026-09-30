@@ -12,6 +12,8 @@ using Serilog.Formatting.Compact;
 var development = args.Contains("--development", StringComparer.Ordinal);
 var baseDirectory = development ? Path.GetFullPath(Path.Combine(FindDevelopmentRoot(), "artifacts", "development"))
     : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PortSentinel");
+try
+{
 if (development) Directory.CreateDirectory(baseDirectory);
 else ProtectedStorage.Verify(baseDirectory);
 using var databaseOwner = new FileStream(Path.Combine(baseDirectory, "service.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
@@ -21,8 +23,6 @@ Log.Logger = new LoggerConfiguration().MinimumLevel.Information().MinimumLevel.O
     .WriteTo.File(new CompactJsonFormatter(), Path.Combine(baseDirectory, "logs", "service-.jsonl"),
         rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 5 * 1024 * 1024, rollOnFileSizeLimit: true,
         retainedFileCountLimit: 30, retainedFileTimeLimit: TimeSpan.FromDays(30)).CreateLogger();
-try
-{
     var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = [], ContentRootPath = AppContext.BaseDirectory });
     builder.Services.AddWindowsService(o => o.ServiceName = "PortSentinel");
     builder.Services.AddSerilog();
@@ -38,7 +38,7 @@ try
     Log.Information("Starting PortSentinel. Development={Development}; enforcement is unverified; no Windows policy writes.", development);
     await host.RunAsync();
 }
-catch (Exception ex) { Log.Fatal(ex, "PortSentinel terminated"); Environment.ExitCode = 1; }
+catch (Exception ex) { Log.Fatal(ex, "PortSentinel terminated"); Console.Error.WriteLine("PortSentinel başlatılamadı: " + ex); Environment.ExitCode = 1; }
 finally { await Log.CloseAndFlushAsync(); }
 
 static string FindDevelopmentRoot()

@@ -12,7 +12,12 @@ public sealed class PipeSentinelClient(string pipeName, bool development = false
         deadline.CancelAfter(TimeSpan.FromSeconds(60));
         await using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous,
             TokenImpersonationLevel.Impersonation);
-        await pipe.ConnectAsync(5000, deadline.Token);
+        if (!development) PipePeerVerifier.RequireRunningService();
+        try { await pipe.ConnectAsync(5000, deadline.Token); }
+        catch (TimeoutException ex)
+        {
+            throw new IOException("PortSentinel servisi bağlantı açmadı. Biraz sonra Yenile'ye basın; devam ederse güncel setup'ı yeniden çalıştırarak kurulumu onarın.", ex);
+        }
         if (!development) PipePeerVerifier.VerifyService(pipe);
         await PipeProtocol.WriteAsync(pipe, request, PipeProtocol.MaxRequestBytes, deadline.Token);
         return await PipeProtocol.ReadAsync<Response>(pipe, PipeProtocol.MaxResponseBytes, deadline.Token);

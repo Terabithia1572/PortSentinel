@@ -7,6 +7,30 @@ namespace PortSentinel.Infrastructure.Ipc;
 
 public static class PipePeerVerifier
 {
+    public static void RequireRunningService()
+    {
+        var manager = OpenSCManager(null, null, 1);
+        if (manager == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
+        try
+        {
+            var service = OpenService(manager, "PortSentinel", 4);
+            if (service == IntPtr.Zero)
+            {
+                var error = Marshal.GetLastWin32Error();
+                if (error == 1060) throw new IOException("PortSentinel servisi kurulu değil. Güncel PortSentinel setup'ını yeniden çalıştırarak kurulumu onarın.");
+                throw new Win32Exception(error);
+            }
+            try
+            {
+                if (!QueryServiceStatusEx(service, 0, out var status, Marshal.SizeOf<ServiceStatusProcess>(), out _))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                if (status.CurrentState != 4)
+                    throw new IOException("PortSentinel servisi çalışmıyor veya başlatılıyor. Biraz sonra Yenile'ye basın; devam ederse güncel setup'ı yeniden çalıştırın. Tanılama: ProgramData\\PortSentinel\\logs.");
+            }
+            finally { CloseServiceHandle(service); }
+        }
+        finally { CloseServiceHandle(manager); }
+    }
     public static void VerifyService(NamedPipeClientStream pipe)
     {
         if (!GetNamedPipeServerProcessId(pipe.SafePipeHandle, out var pipePid)) throw new Win32Exception(Marshal.GetLastWin32Error());

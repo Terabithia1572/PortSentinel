@@ -4,7 +4,7 @@ Kurulum hedefi **Windows 10 ve Windows 11 x64**. Kurucu ve servis kurulum betiğ
 
 Mevcut paket x64 ikililer içerir; 32 bit Windows veya ARM64 için ayrı paket üretilmemiştir. Windows 7/8 gibi eski işletim sistemleri bu .NET 10 paketinin hedefi değildir. .NET çalışma zamanı setup içine dahildir. Microsoft'un resmi [.NET OS destek listesi](https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md), bu uygulamanın kurulumu kabul etmesinden ayrı bir konudur; kurucu bu liste üzerinden Windows 10/11'i engellemez.
 
-Windows 11 Pro 23H2/build 22631 x64 üzerinde build, salt okunur tanılama, gerçek pipe/token, SQLite, WPF ve self-contained geliştirme smoke testi çalıştırıldı. Windows 10 üzerinde ayrı kurulum/çalıştırma kabul testi henüz yapılmadı; tüm edisyon/güncelleme kombinasyonları test edilmiş sayılmaz. Gerçek SCM kurulum/kaldırma ve yeniden başlatma testi bekler.
+Windows 11 Pro 23H2/build 22631 x64 üzerinde build, salt okunur tanılama, gerçek pipe/token, SQLite, WPF ve 1.0.2'nin gerçek Inno setup/LocalService/SCM kurulumu çalıştırıldı. Üretim IPC/PID doğrulaması, temiz kurulum, yerinde onarım, kaldırma/veri koruma, tekrar kurulum ve eksik ProgramData ile kaldırma doğrulandı. Windows 10 üzerinde ayrı kabul, yeniden başlatma ve tüm edisyon/güncelleme kombinasyonları test edilmiş sayılmaz.
 
 Windows tanılaması edisyonu, güncelleme sürümünü, build'i ve CPU mimarisini bilgi amacıyla gösterir. ProductName bazı Windows 11 sistemlerinde Windows 10 adını taşıyabildiği için kurulum kabul kararı ona dayanmaz. Windows 10/11 ailesi registry major sürümü ve x64 CPU ile tanınır.
 

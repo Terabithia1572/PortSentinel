@@ -4,7 +4,7 @@
   <p>Windows için Türkçe USB cihaz izin yönetimi ve keşif uygulaması</p>
   <p><strong>Geliştirici: Yunus İNAN</strong> · Windows 10 / 11 x64 · WPF / .NET 10</p>
   <p>
-    <a href="https://github.com/Terabithia1572/PortSentinel/releases/tag/v1.0.1">Setup 1.0.1</a> ·
+    <a href="https://github.com/Terabithia1572/PortSentinel/releases/tag/v1.0.2">Setup 1.0.2</a> ·
     <a href="https://github.com/Terabithia1572/PortSentinel/actions/workflows/windows-ci.yml">Windows CI</a> ·
     <a href="docs/SETUP.md">Kurulum belgesi</a> ·
     <a href="docs/TEST-RAPORU.md">Test raporu</a>
@@ -35,7 +35,7 @@ PortSentinel, masaüstü arayüzünü arka plan servisinden ayıran bir Windows 
 
 ## Ekran görüntüleri
 
-Görüntüler gerçek geliştirme servisine bağlı uygulamadan alınmıştır. Tarama sırasında bağlı USB depolama bulunmadığından listeler boştur; örnek cihaz sonucu üretilmemiştir.
+Görüntüler gerçek servise bağlı uygulamadan alınmıştır. 1.0.2 kontrol paneli ve tanılama ekranı kurulu LocalService servisiyle doğrulanmıştır. Tarama sırasında bağlı USB depolama bulunmadığından listeler boştur; örnek cihaz sonucu üretilmemiştir.
 
 ![Kontrol paneli](docs/images/kontrol-paneli.png)
 
@@ -62,7 +62,7 @@ Görüntüler gerçek geliştirme servisine bağlı uygulamadan alınmıştır. 
 
 ## İndirme ve kurulum
 
-1. [v1.0.1 Releases sayfasından](https://github.com/Terabithia1572/PortSentinel/releases/tag/v1.0.1) `PortSentinel-Setup-1.0.1.exe` dosyasını indirin.
+1. [v1.0.2 Releases sayfasından](https://github.com/Terabithia1572/PortSentinel/releases/tag/v1.0.2) `PortSentinel-Setup-1.0.2.exe` dosyasını indirin.
 2. İsterseniz aynı sayfadaki `.sha256` dosyasıyla bütünlüğü doğrulayın.
 3. Setup'ı çalıştırıp UAC yönetici isteğini onaylayın; masaüstü kısayolu isteğe bağlıdır.
 4. PortSentinel'i Başlat menüsünden açın. Standart kullanıcı görüntüleyebilir; izin/ayar işlemleri için arayüzde **Yönetici olarak aç** düğmesini kullanın.
@@ -74,8 +74,8 @@ Setup **.NET 10.0.12 x64 çalışma zamanını içerir**; kullanıcı ayrıca .N
 Dosya bütünlüğünü PowerShell ile kontrol etmek için iki dosyayı aynı dizine indirin:
 
 ```powershell
-$expected = ((Get-Content .\PortSentinel-Setup-1.0.1.sha256 -Raw).Trim() -split '\s+')[0]
-$actual = (Get-FileHash .\PortSentinel-Setup-1.0.1.exe -Algorithm SHA256).Hash
+$expected = ((Get-Content .\PortSentinel-Setup-1.0.2.sha256 -Raw).Trim() -split '\s+')[0]
+$actual = (Get-FileHash .\PortSentinel-Setup-1.0.2.exe -Algorithm SHA256).Hash
 if ($actual -ine $expected) { throw 'SHA256 uyuşmuyor.' }
 'Bütünlük doğrulandı.'
 ```
@@ -89,13 +89,13 @@ Kurulum yolları:
 - Servis günlükleri: `C:\ProgramData\PortSentinel\logs`.
 - Kurulum sahipliği: `install-receipt.json`; salt okunur politika başlangıcı: `policy-baseline.json`.
 
-Kurucu mevcut servis veya sahipliği belirsiz kurulum dizinini ezmez. Dosya hash'leri ve reparse kontrolleri yapılır. Program Files ve ProgramData ACL'leri açıkça düzenlenir. Servis kayıt/başlatma hatası başarılı kurulum olarak gösterilmez. **USBSTOR, Defender, GPO ve MDM erişim politikaları değiştirilmez.** Ayrıntılı süreç [SETUP.md](docs/SETUP.md) içindedir.
+Kurucu sahipliği doğrulanmış mevcut PortSentinel kurulumunu onarır/günceller. 1.0.1'den kalan servis ve ProgramData oluşturulmamış yarım kurulum da tanınır; eski kaldırıcıyı çalıştırmanız gerekmez. Dosya hash'leri ve reparse kontrolleri yapılır; değişmiş veya bilinmeyen çakışan dosyalar korunur. Program Files ve ProgramData ACL'leri düzenlenir. Servis kaydı, LocalService altında başlangıç ve SCM PID ile eşleşen gerçek IPC yanıtı doğrulanmadan kurulum ilerlemez. **USBSTOR, Defender, GPO ve MDM erişim politikaları değiştirilmez.** Ayrıntılı süreç [SETUP.md](docs/SETUP.md) içindedir.
 
 ### Kaldırma ve güncelleme
 
 Windows **Ayarlar → Uygulamalar → PortSentinel → Kaldır** yolunu veya Başlat menüsündeki kaldırıcıyı kullanın. Servis yolu, sahiplik ve dosya hash kontrollerinden sonra servis durdurulur, kaydı ve kurulan dosyalar kaldırılır. **ProgramData veritabanı, ayarlar, audit ve başlangıç kaydı korunur.**
 
-Yerinde yükseltme bu sürümde yoktur: servisi durdurup korumalı veriyi yedekleyin, eski sürümü kendi kaldırıcısıyla kaldırın ve yeni setup'ı kurun. ZIP/PowerShell kurulumu kendi betikleriyle yönetilir; Inno kurulumunda Windows kaldırıcı kullanılır. [Kurtarma belgesi](docs/KURTARMA.md).
+Güncellemek veya yarım kurulumu onarmak için PortSentinel pencerelerini kapatın ve yeni setup'ı çalıştırın. Mevcut veritabanı ve kayıtlar korunur. ZIP/PowerShell kurulumu kendi betikleriyle yönetilir; Inno kurulumunda Windows kaldırıcı kullanılır. [Kurtarma belgesi](docs/KURTARMA.md).
 
 ## Kaynaktan geliştirme
 
@@ -135,7 +135,7 @@ Geliştirme verisi proje altındaki `artifacts/development` dizinindedir. Geliş
 
 `Build.ps1`: `artifacts/publish/service`, `desktop`, belgeler, lisans metadata ve `checksums.json`. Bu paketi çalıştırmak için .NET 10 x64 Desktop Runtime gerekir.
 
-`Build-Setup.ps1`: `artifacts/setup-payload` ve `artifacts/installer/PortSentinel-Setup-1.0.1.exe` / `.sha256`. Çalışma zamanı pakettedir. `-InnoCompiler 'C:\...\ISCC.exe'` özel derleyici yolunu seçer. `-SkipTests` yalnız testler zaten doğrulandığında kullanılmalıdır. Build betikleri **kurulum yapmaz**.
+`Build-Setup.ps1`: `artifacts/setup-payload` ve `artifacts/installer/PortSentinel-Setup-1.0.2.exe` / `.sha256`. Çalışma zamanı pakettedir. `-InnoCompiler 'C:\...\ISCC.exe'` özel derleyici yolunu seçer. `-SkipTests` yalnız testler zaten doğrulandığında kullanılmalıdır. Build betikleri **kurulum yapmaz**.
 
 Sürüm/yayıncı `Directory.Build.props`, doğrudan paket sürümleri `Directory.Packages.props`, çözülen bağımlılıklar `packages.lock.json` dosyalarındadır. NuGet kaynağı `NuGet.Config` içinde tanımlıdır.
 
@@ -173,7 +173,7 @@ Fiziksel USB ata düğümü, seri, VID/PID ve UniqueID yeteneği birlikte değer
 
 ## Testler ve CI
 
-Son yerel doğrulama: **24 unit + 18 integration = 42 başarılı test**, 0 atlanan/başarısız; Release build 0 hata/uyarı. Gerçek geliştirme servisiyle **beş WPF ekranı** render edildi ve binding hata logu boştu. Self-contained EXE'ler ayrıca çalıştırıldı. Windows 11 Pro 23H2/build 22631, yeni kurulum ön kontrolünden geçti.
+Son yerel doğrulama: **24 unit + 18 integration = 42 başarılı test** ve **10 Windows PowerShell 5.1 kurulum regresyonu**; Release build 0 hata/uyarı. Kurulu **LocalService Windows servisiyle beş WPF ekranı** render edildi, üretim SCM PID/IPC doğrulaması geçti ve binding hata logu boştu. Gerçek setup ile temiz kurulum, çalışan servisi yerinde onarım, kaldırma, veritabanını koruyarak tekrar kurulum ve ProgramData/receipt eksikken kaldırma çalıştırıldı. Windows 11 Pro 23H2/build 22631.
 
 - Unit: kimlik/kapsam, on cihazın bağımsız değerlendirmesi, XML önizleme, doğrulama ve IPC framing.
 - SQLite/Application: gerçek geçici SQLite, migration, kalıcılık, conflict, duplicate, eşzamanlı işlemler, auth, retention ve hata/başlangıç uzlaştırması.
@@ -186,7 +186,7 @@ dotnet test tests/PortSentinel.IntegrationTests -c Release --filter 'Category=Wi
 dotnet test tests/PortSentinel.IntegrationTests -c Release --filter 'Category=WindowsReadOnly'
 ```
 
-[Windows CI](.github/workflows/windows-ci.yml), main push/PR ve sürüm tag'lerinde Windows runner üzerinde restore/build/test/publish çalıştırır. TRX ve framework-dependent paket artifact olarak saklanır. Sürüm tag'i veya manuel `build_installer` seçeneği self-contained kurucuyu da üretir. Action commit'leri sabitlenmiştir. CI uygulamayı kurmaz, USB politikası etkinleştirmez ve fiziksel donanım kabulü sayılmaz. [Test raporu](docs/TEST-RAPORU.md).
+[Windows CI](.github/workflows/windows-ci.yml), main push/PR ve sürüm tag'lerinde Windows runner üzerinde restore/build/test/publish ve Windows PowerShell 5.1 regresyonlarını çalıştırır. TRX ve paket artifact olarak saklanır. Sürüm tag'i veya manuel `build_installer` seçeneği self-contained kurucuyu üretir ve **boş test makinesinde gerçek SCM kurulum/onarım/kaldırma kabulünü** çalıştırır. Bu test başlangıçta mevcut PortSentinel servisi/uygulaması/verisi varsa durur. Action commit'leri sabitlenmiştir. USB politikası etkinleştirilmez; fiziksel donanım kabulü sayılmaz. [Test raporu](docs/TEST-RAPORU.md).
 
 ## Veri, kayıtlar ve tanılama
 
@@ -198,7 +198,7 @@ Bağlantı hatasında yönetim komutları kapatılır; son bilinen liste güncel
 
 ## Bilinen sınırlar ve yol haritası
 
-Bu sürümde USB dosya erişimi engelleme yoktur. Açık handle/yazma iptali, boot öncesi engelleme, servis duruşunda koruma ve politika engine readback kabul edilmemiştir. Polling kısa bağlantıları kaçırabilir. Mount-point-only volume ayrıntıları tam çıkarılmaz. Lisans/onboarding, kesin GPO/MDM kaynak çözümleme ve Windows 10/gerçek SCM kabulü bekler.
+Bu sürümde USB dosya erişimi engelleme yoktur. Açık handle/yazma iptali, boot öncesi engelleme, servis duruşunda koruma ve politika engine readback kabul edilmemiştir. Polling kısa bağlantıları kaçırabilir. Mount-point-only volume ayrıntıları tam çıkarılmaz. Lisans/onboarding, kesin GPO/MDM kaynak çözümleme, Windows 10 üzerinde ayrı kabul ve yeniden başlatma/donanım kabulü bekler.
 
 Üretim erişim denetimi için sıradaki işler: lisanslı backend entegrasyonu, politika sahipliği ve geri alma protokolü, etkin hash/revizyon doğrulaması, USBSTOR/UASP/boot/handle donanım testleri, farklı Windows edisyonları ve standart kullanıcıyla kurulum kabulü, kod imzalama ve sürüm yükseltme akışı. Bunlar tamamlanmış özellikler olarak sunulmaz.
 

@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $lines = [System.Collections.Generic.List[string]]::new()
 $os = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
@@ -17,12 +18,14 @@ foreach ($path in @(
     'HKLM:\SOFTWARE\Microsoft\PolicyManager\current\device\Defender',
     'HKLM:\SOFTWARE\Microsoft\Enrollments'
 )) {
+    try {
     if (Test-Path $path) {
         $values = Get-ItemProperty $path
         $names = @($values.PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | Select-Object -ExpandProperty Name)
         $children = @(Get-ChildItem $path -ErrorAction SilentlyContinue)
         if ($names.Count -gt 0 -or $children.Count -gt 0) { $lines.Add(('Mevcut yönetim/politika göstergesi: {0}; değerler={1}; alt anahtar={2}. Kaynak ve çatışma yöneticice incelenmeli.' -f $path, ($names -join ','), $children.Count)) }
     }
+    } catch { $lines.Add(('Yönetim/politika anahtarı bu servis hesabıyla okunamadı: {0}. Yetki/sahiplik yöneticice incelenmeli.' -f $path)) }
 }
 try {
     $mp = Get-MpComputerStatus
